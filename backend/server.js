@@ -10,7 +10,7 @@ app.use(express.json({ limit: '5mb' }));
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected'))
-  .catch(err => { console.error('MongoDB connection error:', err); process.exit(1); });
+  .catch(err => console.error('MongoDB connection error:', err.message));
 
 app.use('/api/auth',           require('./routes/auth'));
 app.use('/api/meal-plan',      require('./routes/mealPlan'));
