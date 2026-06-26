@@ -22,6 +22,17 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "extra": {}
+    "extra": {
+      "eas": {
+        "projectId": "04e74181-fbc8-400e-a68a-c32a42ba7fb0"
+      }
+    },
+    "owner": "abd_19",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/04e74181-fbc8-400e-a68a-c32a42ba7fb0"
+    }
   }
 }

@@ -1,6 +1,6 @@
 // Replace with your computer's local IP when testing on phone (e.g. http://192.168.1.5:3000/api)
 // Replace with your deployed server URL when in production
-export const BACKEND_URL = 'http://192.168.100.23:3000/api';
+export const BACKEND_URL = 'https://recipe-app-backend-production-4bea.up.railway.app/api';
 
 let _token = null;
 
