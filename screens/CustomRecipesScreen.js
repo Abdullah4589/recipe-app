@@ -4,8 +4,8 @@ import {
   Alert, Modal, TextInput, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing, CuisineBadge } from '../constants/theme';
-import { useTheme } from '../context/ThemeContext';
+import { Typography, Spacing, CuisineBadge } from '../constants/theme';
+import { useTheme, useColors } from '../context/ThemeContext';
 import { customRecipesAPI } from '../api/backend';
 
 const EMPTY_FORM = { title: '', cuisine: '', readyInMinutes: '', servings: '', ingredientsText: '', stepsText: '' };
@@ -34,6 +34,7 @@ function toFormValues(r) {
 export default function CustomRecipesScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const colors = useColors();
   const [recipes, setRecipes]         = useState([]);
   const [loading, setLoading]         = useState(true);
   const [modalVisible, setModal]      = useState(false);
@@ -112,7 +113,7 @@ export default function CustomRecipesScreen({ navigation }) {
     };
     return (
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
         onPress={() => navigation.navigate('RecipeDetail', { recipe })}
         activeOpacity={0.8}
       >
@@ -122,7 +123,7 @@ export default function CustomRecipesScreen({ navigation }) {
           </Text>
         </View>
         <View style={styles.cardBody}>
-          <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+          <Text style={[styles.cardTitle, { color: colors.textPrimary }]} numberOfLines={2}>{item.title}</Text>
           <View style={styles.cardMeta}>
             {item.cuisine ? (
               <View style={[styles.badge, { backgroundColor: badge.bg }]}>
@@ -130,7 +131,7 @@ export default function CustomRecipesScreen({ navigation }) {
               </View>
             ) : null}
             {item.readyInMinutes ? (
-              <Text style={styles.metaText}>{item.readyInMinutes} min</Text>
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>{item.readyInMinutes} min</Text>
             ) : null}
           </View>
         </View>
@@ -139,13 +140,13 @@ export default function CustomRecipesScreen({ navigation }) {
             onPress={() => openEdit(item)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={styles.editIcon}>✎</Text>
+            <Text style={[styles.editIcon, { color: colors.textSecondary }]}>✎</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleDelete(item._id)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={styles.deleteIcon}>✕</Text>
+            <Text style={[styles.deleteIcon, { color: colors.textSecondary }]}>✕</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -155,17 +156,17 @@ export default function CustomRecipesScreen({ navigation }) {
   const setField = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Top bar */}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backBtn}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.backIcon}>‹</Text>
+          <Text style={[styles.backIcon, { color: colors.textPrimary }]}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.topTitle}>My Recipes</Text>
+        <Text style={[styles.topTitle, { color: colors.textPrimary }]}>My Recipes</Text>
         <TouchableOpacity
           onPress={openAdd}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -181,8 +182,8 @@ export default function CustomRecipesScreen({ navigation }) {
       ) : recipes.length === 0 ? (
         <View style={styles.center}>
           <Text style={styles.emptyEmoji}>📝</Text>
-          <Text style={styles.emptyTitle}>No recipes yet</Text>
-          <Text style={styles.emptySubtitle}>Tap + to add your own recipe</Text>
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No recipes yet</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>Tap + to add your own recipe</Text>
           <TouchableOpacity style={[styles.addCta, { backgroundColor: theme.primary }]} onPress={openAdd}>
             <Text style={styles.addCtaText}>Add Recipe</Text>
           </TouchableOpacity>
@@ -201,14 +202,13 @@ export default function CustomRecipesScreen({ navigation }) {
       <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={[styles.modal, { paddingTop: insets.top }]}
+          style={[styles.modal, { backgroundColor: colors.background, paddingTop: insets.top }]}
         >
-          {/* Modal header */}
-          <View style={styles.modalHeader}>
+          <View style={[styles.modalHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
             <TouchableOpacity onPress={closeModal} disabled={saving}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>{editingId ? 'Edit Recipe' : 'New Recipe'}</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{editingId ? 'Edit Recipe' : 'New Recipe'}</Text>
             <TouchableOpacity onPress={handleSave} disabled={saving}>
               {saving
                 ? <ActivityIndicator size="small" color={theme.primary} />
@@ -218,31 +218,31 @@ export default function CustomRecipesScreen({ navigation }) {
           </View>
 
           <ScrollView contentContainerStyle={styles.modalBody} keyboardShouldPersistTaps="handled">
-            <Text style={styles.fieldLabel}>Title *</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Title *</Text>
             <TextInput
-              style={styles.fieldInput}
+              style={[styles.fieldInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="e.g. Mum's Biryani"
-              placeholderTextColor={Colors.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               value={form.title}
               onChangeText={v => setField('title', v)}
             />
 
-            <Text style={styles.fieldLabel}>Cuisine</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Cuisine</Text>
             <TextInput
-              style={styles.fieldInput}
+              style={[styles.fieldInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="e.g. Pakistani"
-              placeholderTextColor={Colors.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               value={form.cuisine}
               onChangeText={v => setField('cuisine', v)}
             />
 
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.fieldLabel}>Time (min)</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Time (min)</Text>
                 <TextInput
-                  style={styles.fieldInput}
+                  style={[styles.fieldInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
                   placeholder="30"
-                  placeholderTextColor={Colors.textSecondary}
+                  placeholderTextColor={colors.textSecondary}
                   value={form.readyInMinutes}
                   onChangeText={v => setField('readyInMinutes', v)}
                   keyboardType="number-pad"
@@ -250,11 +250,11 @@ export default function CustomRecipesScreen({ navigation }) {
               </View>
               <View style={{ width: 12 }} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.fieldLabel}>Servings</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Servings</Text>
                 <TextInput
-                  style={styles.fieldInput}
+                  style={[styles.fieldInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
                   placeholder="4"
-                  placeholderTextColor={Colors.textSecondary}
+                  placeholderTextColor={colors.textSecondary}
                   value={form.servings}
                   onChangeText={v => setField('servings', v)}
                   keyboardType="number-pad"
@@ -262,24 +262,24 @@ export default function CustomRecipesScreen({ navigation }) {
               </View>
             </View>
 
-            <Text style={styles.fieldLabel}>Ingredients</Text>
-            <Text style={styles.fieldHint}>One per line — e.g. "2 cups rice"</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Ingredients</Text>
+            <Text style={[styles.fieldHint, { color: colors.textSecondary }]}>One per line — e.g. "2 cups rice"</Text>
             <TextInput
-              style={[styles.fieldInput, styles.multiline]}
+              style={[styles.fieldInput, styles.multiline, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder={'2 cups basmati rice\n500g chicken\n1 tsp cumin'}
-              placeholderTextColor={Colors.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               value={form.ingredientsText}
               onChangeText={v => setField('ingredientsText', v)}
               multiline
               textAlignVertical="top"
             />
 
-            <Text style={styles.fieldLabel}>Instructions</Text>
-            <Text style={styles.fieldHint}>One step per line</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Instructions</Text>
+            <Text style={[styles.fieldHint, { color: colors.textSecondary }]}>One step per line</Text>
             <TextInput
-              style={[styles.fieldInput, styles.multiline]}
+              style={[styles.fieldInput, styles.multiline, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder={'Wash the rice and soak for 30 minutes.\nFry onions until golden.\nAdd chicken and spices.'}
-              placeholderTextColor={Colors.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               value={form.stepsText}
               onChangeText={v => setField('stepsText', v)}
               multiline
@@ -295,59 +295,58 @@ export default function CustomRecipesScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing.md, paddingVertical: 12,
-    backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
   },
   backBtn: { width: 36 },
-  backIcon: { fontSize: 28, color: Colors.textPrimary, fontWeight: '300', lineHeight: 32 },
-  topTitle: { ...Typography.heading2, color: Colors.textPrimary },
+  backIcon: { fontSize: 28, fontWeight: '300', lineHeight: 32 },
+  topTitle: { ...Typography.heading2 },
   addIcon: { fontSize: 28, fontWeight: '300', lineHeight: 32 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg },
   emptyEmoji: { fontSize: 52, marginBottom: 12 },
-  emptyTitle: { ...Typography.heading2, color: Colors.textPrimary, marginBottom: 8 },
-  emptySubtitle: { fontSize: 14, color: Colors.textSecondary, marginBottom: 24, textAlign: 'center' },
+  emptyTitle: { ...Typography.heading2, marginBottom: 8 },
+  emptySubtitle: { fontSize: 14, marginBottom: 24, textAlign: 'center' },
   addCta: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
   addCtaText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   list: { padding: Spacing.md, paddingBottom: 32 },
   card: {
-    flexDirection: 'row', backgroundColor: Colors.surface,
-    borderRadius: 16, borderWidth: 1, borderColor: Colors.border,
+    flexDirection: 'row',
+    borderRadius: 16, borderWidth: 1,
     marginBottom: 12, overflow: 'hidden', alignItems: 'center',
   },
   cardAccent: { width: 64, height: 80, alignItems: 'center', justifyContent: 'center' },
   cardLetter: { fontSize: 28, fontWeight: '700' },
   cardBody: { flex: 1, paddingHorizontal: 12, paddingVertical: 10 },
-  cardTitle: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, marginBottom: 6 },
+  cardTitle: { fontSize: 14, fontWeight: '600', marginBottom: 6 },
   cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   badgeText: { fontSize: 11, fontWeight: '600' },
-  metaText: { fontSize: 12, color: Colors.textSecondary },
+  metaText: { fontSize: 12 },
   cardActions: { flexDirection: 'column', paddingRight: 14, gap: 12 },
-  editIcon: { fontSize: 18, color: Colors.textSecondary },
-  deleteIcon: { fontSize: 16, color: Colors.textSecondary },
-  // Modal
-  modal: { flex: 1, backgroundColor: Colors.background },
+  editIcon: { fontSize: 18 },
+  deleteIcon: { fontSize: 16 },
+  modal: { flex: 1 },
   modalHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing.md, paddingVertical: 14,
-    backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
   },
-  cancelText: { fontSize: 15, color: Colors.textSecondary, width: 64 },
-  modalTitle: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary },
+  cancelText: { fontSize: 15, width: 64 },
+  modalTitle: { fontSize: 16, fontWeight: '600' },
   saveText: { fontSize: 15, fontWeight: '700', width: 64, textAlign: 'right' },
   modalBody: { padding: Spacing.md },
   fieldLabel: {
-    fontSize: 13, fontWeight: '600', color: Colors.textSecondary,
+    fontSize: 13, fontWeight: '600',
     marginBottom: 6, marginTop: 18, textTransform: 'uppercase', letterSpacing: 0.5,
   },
-  fieldHint: { fontSize: 12, color: Colors.textSecondary, marginBottom: 6, marginTop: -4 },
+  fieldHint: { fontSize: 12, marginBottom: 6, marginTop: -4 },
   fieldInput: {
-    backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1,
     borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, color: Colors.textPrimary,
+    fontSize: 15,
   },
   multiline: { minHeight: 120, paddingTop: 12 },
   row: { flexDirection: 'row', marginTop: 0 },

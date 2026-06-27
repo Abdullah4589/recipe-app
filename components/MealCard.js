@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { Colors, Typography, CuisineBadge, cardShadow } from '../constants/theme';
-import { useTheme } from '../context/ThemeContext';
+import { Typography, CuisineBadge } from '../constants/theme';
+import { useTheme, useColors } from '../context/ThemeContext';
 
 function MetaChip({ label, bgColor, textColor }) {
   return (
@@ -13,13 +13,18 @@ function MetaChip({ label, bgColor, textColor }) {
 
 export default function MealCard({ meal, mealType, onPress, onShuffle }) {
   const { theme } = useTheme();
+  const colors    = useColors();
   if (!meal) return null;
 
-  const badge = CuisineBadge[meal.cuisine] || { bg: theme.primaryLight, text: theme.primary };
+  const badge    = CuisineBadge[meal.cuisine] || { bg: theme.primaryLight, text: theme.primary };
   const dietLabel = meal.diets?.[0];
 
   return (
-    <TouchableOpacity style={[cardShadow, styles.card]} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
       <View style={styles.imageWrapper}>
         {meal.image ? (
           <Image source={{ uri: meal.image }} style={styles.image} resizeMode="cover" />
@@ -36,23 +41,27 @@ export default function MealCard({ meal, mealType, onPress, onShuffle }) {
       </View>
 
       <View style={styles.body}>
-        <Text style={styles.title} numberOfLines={2}>{meal.title}</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>{meal.title}</Text>
         <View style={styles.metaRow}>
           <MetaChip label={meal.cuisine} bgColor={badge.bg} textColor={badge.text} />
           {dietLabel ? (
             <MetaChip label={dietLabel} bgColor={theme.primaryLight} textColor={theme.primary} />
           ) : null}
           {meal.readyInMinutes ? (
-            <MetaChip label={`${meal.readyInMinutes} min`} bgColor={Colors.background} textColor={Colors.textSecondary} />
+            <MetaChip label={`${meal.readyInMinutes} min`} bgColor={colors.background} textColor={colors.textSecondary} />
           ) : null}
         </View>
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity onPress={onShuffle} style={styles.shuffleBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity
+          onPress={onShuffle}
+          style={[styles.shuffleBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Text style={[styles.shuffleIcon, { color: theme.primary }]}>⟳</Text>
         </TouchableOpacity>
-        <Text style={styles.arrow}>›</Text>
+        <Text style={[styles.arrow, { color: colors.textSecondary }]}>›</Text>
       </View>
     </TouchableOpacity>
   );
@@ -62,6 +71,13 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 16,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   imageWrapper: {
     position: 'relative',
@@ -101,7 +117,6 @@ const styles = StyleSheet.create({
   },
   title: {
     ...Typography.heading3,
-    color: Colors.textPrimary,
     marginBottom: 8,
   },
   metaRow: {
@@ -130,11 +145,9 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   shuffleIcon: {
     fontSize: 18,
@@ -143,6 +156,5 @@ const styles = StyleSheet.create({
   },
   arrow: {
     fontSize: 22,
-    color: Colors.textSecondary,
   },
 });

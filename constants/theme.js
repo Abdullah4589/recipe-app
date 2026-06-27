@@ -1,3 +1,21 @@
+export const DarkColors = {
+  amber: '#3D2E0E',
+  amberText: '#F0C060',
+  green: '#142414',
+  greenText: '#5BBF6E',
+  blue: '#0A1929',
+  blueText: '#5A9FE0',
+  coral: '#2A1510',
+  coralText: '#E8825C',
+  purple: '#17122A',
+  purpleText: '#9C85D4',
+  background: '#111111',
+  surface: '#1C1C1E',
+  textPrimary: '#F2F2F7',
+  textSecondary: '#8E8E93',
+  border: '#2C2C2E',
+};
+
 export const themes = {
   forest: {
     key: 'forest',

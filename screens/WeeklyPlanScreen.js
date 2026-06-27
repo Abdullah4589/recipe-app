@@ -4,8 +4,8 @@ import {
   ActivityIndicator, StyleSheet, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing } from '../constants/theme';
-import { useTheme } from '../context/ThemeContext';
+import { Typography, Spacing } from '../constants/theme';
+import { useTheme, useColors } from '../context/ThemeContext';
 import DayPill from '../components/DayPill';
 import MealCard from '../components/MealCard';
 import { generateWeekPlan, shuffleSingleMeal } from '../api/gemini';
@@ -29,6 +29,7 @@ async function persistPlan(plan, cuisines, diet) {
 export default function WeeklyPlanScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const colors = useColors();
   const { cuisines, diet } = route.params;
 
   const [selectedDay, setSelectedDay]   = useState('Mon');
@@ -63,11 +64,9 @@ export default function WeeklyPlanScreen({ route, navigation }) {
     }
   }, [cuisines, diet]);
 
-  // On mount: try cloud → local cache → generate fresh
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      // 1. Try cloud
       try {
         const cloud = await mealPlanAPI.get();
         if (cloud?.plan) {
@@ -77,7 +76,6 @@ export default function WeeklyPlanScreen({ route, navigation }) {
           return;
         }
       } catch (_e) {}
-      // 2. Try local cache
       try {
         const cached = await loadMealPlan();
         if (cached?.plan) {
@@ -87,7 +85,6 @@ export default function WeeklyPlanScreen({ route, navigation }) {
           return;
         }
       } catch (_e) {}
-      // 3. Generate fresh
       generateFresh();
     };
     init();
@@ -128,11 +125,11 @@ export default function WeeklyPlanScreen({ route, navigation }) {
 
     return (
       <View style={styles.mealSection}>
-        <Text style={styles.mealTypeLabel}>{mealType}</Text>
+        <Text style={[styles.mealTypeLabel, { color: colors.textSecondary }]}>{mealType}</Text>
         {isShuffling ? (
-          <View style={styles.mealShuffling}>
+          <View style={[styles.mealShuffling, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <ActivityIndicator color={theme.primary} />
-            <Text style={styles.shufflingText}>Finding a new recipe…</Text>
+            <Text style={[styles.shufflingText, { color: colors.textSecondary }]}>Finding a new recipe…</Text>
           </View>
         ) : meal ? (
           <MealCard
@@ -142,8 +139,8 @@ export default function WeeklyPlanScreen({ route, navigation }) {
             onShuffle={() => handleShuffle(selectedDay, mealType)}
           />
         ) : (
-          <View style={styles.emptyMeal}>
-            <Text style={styles.emptyText}>No recipe found</Text>
+          <View style={[styles.emptyMeal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No recipe found</Text>
             <TouchableOpacity onPress={() => handleShuffle(selectedDay, mealType)}>
               <Text style={[styles.retryText, { color: theme.primary }]}>Try another</Text>
             </TouchableOpacity>
@@ -154,29 +151,31 @@ export default function WeeklyPlanScreen({ route, navigation }) {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Top bar */}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backBtn}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.backIcon}>‹</Text>
+          <Text style={[styles.backIcon, { color: colors.textPrimary }]}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.topTitle}>This Week</Text>
+        <Text style={[styles.topTitle, { color: colors.textPrimary }]}>This Week</Text>
         <TouchableOpacity
           onPress={handleRegenerate}
           style={styles.regenBtn}
           disabled={loading}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={[styles.regenIcon, { color: loading ? Colors.border : theme.primary }]}>↻</Text>
+          <Text style={[styles.regenIcon, { color: loading ? colors.border : theme.primary }]}>↻</Text>
         </TouchableOpacity>
       </View>
 
       {savedAt ? (
-        <Text style={styles.lastUpdated}>Last updated: {formatDate(savedAt)}</Text>
+        <Text style={[styles.lastUpdated, { color: colors.textSecondary, backgroundColor: colors.surface }]}>
+          Last updated: {formatDate(savedAt)}
+        </Text>
       ) : null}
 
       {/* Day pills */}
@@ -185,7 +184,7 @@ export default function WeeklyPlanScreen({ route, navigation }) {
         data={DAYS}
         keyExtractor={item => item}
         showsHorizontalScrollIndicator={false}
-        style={styles.dayScroll}
+        style={[styles.dayScroll, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}
         contentContainerStyle={styles.dayScrollContent}
         renderItem={({ item: day }) => (
           <DayPill label={day} active={selectedDay === day} onPress={() => setSelectedDay(day)} />
@@ -200,8 +199,8 @@ export default function WeeklyPlanScreen({ route, navigation }) {
       )}
       {error === 'quota' && !plan && (
         <View style={styles.errorFull}>
-          <Text style={styles.errorFullText}>API rate limit reached.</Text>
-          <Text style={styles.errorDetailText}>Wait a moment then tap Retry.</Text>
+          <Text style={[styles.errorFullText, { color: colors.textSecondary }]}>API rate limit reached.</Text>
+          <Text style={[styles.errorDetailText, { color: colors.textSecondary }]}>Wait a moment then tap Retry.</Text>
           <TouchableOpacity onPress={handleRegenerate} style={[styles.retryBtn, { backgroundColor: theme.primary }]}>
             <Text style={styles.retryBtnText}>Retry</Text>
           </TouchableOpacity>
@@ -211,8 +210,8 @@ export default function WeeklyPlanScreen({ route, navigation }) {
       {/* Network error */}
       {error === 'network' && !plan && (
         <View style={styles.errorFull}>
-          <Text style={styles.errorFullText}>Could not load recipes.</Text>
-          {errorDetail ? <Text style={styles.errorDetailText}>{errorDetail}</Text> : null}
+          <Text style={[styles.errorFullText, { color: colors.textSecondary }]}>Could not load recipes.</Text>
+          {errorDetail ? <Text style={[styles.errorDetailText, { color: colors.textSecondary }]}>{errorDetail}</Text> : null}
           <TouchableOpacity onPress={handleRegenerate} style={[styles.retryBtn, { backgroundColor: theme.primary }]}>
             <Text style={styles.retryBtnText}>Retry</Text>
           </TouchableOpacity>
@@ -223,7 +222,7 @@ export default function WeeklyPlanScreen({ route, navigation }) {
       {loading && !plan && (
         <View style={styles.loadingFull}>
           <ActivityIndicator size="large" color={theme.primary} />
-          <Text style={styles.loadingText}>Building your week… (20–30 sec)</Text>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Building your week… (20–30 sec)</Text>
         </View>
       )}
 
@@ -240,9 +239,9 @@ export default function WeeklyPlanScreen({ route, navigation }) {
 
       {/* Loading overlay while regenerating */}
       {loading && plan && (
-        <View style={styles.loadingOverlay}>
+        <View style={[styles.loadingOverlay, { backgroundColor: colors.background + 'D9' }]}>
           <ActivityIndicator size="large" color={theme.primary} />
-          <Text style={styles.loadingText}>Building your week… (20–30 sec)</Text>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Building your week… (20–30 sec)</Text>
         </View>
       )}
     </View>
@@ -250,56 +249,55 @@ export default function WeeklyPlanScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing.md, paddingVertical: 12,
-    backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
   },
   backBtn: { width: 36, alignItems: 'flex-start' },
-  backIcon: { fontSize: 28, color: Colors.textPrimary, fontWeight: '300', lineHeight: 32 },
-  topTitle: { ...Typography.heading2, color: Colors.textPrimary },
+  backIcon: { fontSize: 28, fontWeight: '300', lineHeight: 32 },
+  topTitle: { ...Typography.heading2 },
   regenBtn: { width: 36, alignItems: 'flex-end' },
   regenIcon: { fontSize: 24, fontWeight: '600' },
   lastUpdated: {
-    fontSize: 11, color: Colors.textSecondary, textAlign: 'center',
-    paddingVertical: 6, backgroundColor: Colors.surface,
+    fontSize: 11, textAlign: 'center',
+    paddingVertical: 6,
   },
   dayScroll: {
-    backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
     maxHeight: 60, minHeight: 60,
   },
   dayScrollContent: { alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: 10 },
   mealList: { padding: Spacing.md, paddingBottom: 32 },
   mealSection: { marginBottom: 8 },
   mealTypeLabel: {
-    ...Typography.heading3, color: Colors.textSecondary,
+    ...Typography.heading3,
     marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: 12,
   },
   mealShuffling: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface,
-    borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: Colors.border,
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1,
   },
-  shufflingText: { marginLeft: 12, color: Colors.textSecondary, fontSize: 14 },
+  shufflingText: { marginLeft: 12, fontSize: 14 },
   emptyMeal: {
-    backgroundColor: Colors.surface, borderRadius: 16, padding: 16,
-    alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: Colors.border,
+    borderRadius: 16, padding: 16,
+    alignItems: 'center', marginBottom: 16, borderWidth: 1,
   },
-  emptyText: { color: Colors.textSecondary, marginBottom: 8 },
+  emptyText: { marginBottom: 8 },
   retryText: { fontWeight: '600' },
   loadingFull: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(248,248,246,0.85)',
     alignItems: 'center', justifyContent: 'center', zIndex: 10,
   },
-  loadingText: { marginTop: 12, fontSize: 15, color: Colors.textSecondary },
-  errorBanner: { backgroundColor: Colors.amber, paddingHorizontal: Spacing.md, paddingVertical: 10 },
-  errorBannerText: { color: Colors.amberText, fontSize: 13, textAlign: 'center' },
+  loadingText: { marginTop: 12, fontSize: 15 },
+  errorBanner: { backgroundColor: '#FAEEDA', paddingHorizontal: Spacing.md, paddingVertical: 10 },
+  errorBannerText: { color: '#633806', fontSize: 13, textAlign: 'center' },
   errorFull: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg },
-  errorFullText: { fontSize: 15, color: Colors.textSecondary, marginBottom: 16, textAlign: 'center' },
+  errorFullText: { fontSize: 15, marginBottom: 16, textAlign: 'center' },
   errorDetailText: {
-    fontSize: 11, color: Colors.textSecondary, marginBottom: 16, textAlign: 'center', paddingHorizontal: 8,
+    fontSize: 11, marginBottom: 16, textAlign: 'center', paddingHorizontal: 8,
   },
   retryBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },

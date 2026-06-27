@@ -1,21 +1,21 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, Image, ScrollView, TouchableOpacity,
-  StyleSheet, Linking, FlatList, Alert, ActivityIndicator,
+  StyleSheet, Linking, Alert, ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing, CuisineBadge } from '../constants/theme';
-import { useTheme } from '../context/ThemeContext';
+import { Typography, Spacing, CuisineBadge } from '../constants/theme';
+import { useTheme, useColors } from '../context/ThemeContext';
 import IngredientItem from '../components/IngredientItem';
 import StepCard from '../components/StepCard';
 import { favouritesAPI } from '../api/backend';
 
-function InfoChip({ label, value }) {
+function InfoChip({ label, value, colors }) {
   if (!value) return null;
   return (
-    <View style={styles.infoChip}>
-      <Text style={styles.infoChipLabel}>{label}</Text>
-      <Text style={styles.infoChipValue}>{value}</Text>
+    <View style={[styles.infoChip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Text style={[styles.infoChipLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[styles.infoChipValue, { color: colors.textPrimary }]}>{value}</Text>
     </View>
   );
 }
@@ -23,6 +23,7 @@ function InfoChip({ label, value }) {
 export default function RecipeDetailScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const colors = useColors();
   const { recipe } = route.params;
   const [checked, setChecked]       = useState({});
   const [favSaved, setFavSaved]     = useState(false);
@@ -59,14 +60,14 @@ export default function RecipeDetailScreen({ route, navigation }) {
   const dietLabel = recipe.diets?.[0];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Floating back button */}
       <TouchableOpacity
         style={[styles.backBtnFloat, { top: insets.top + 8 }]}
         onPress={() => navigation.goBack()}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Text style={styles.backBtnText}>‹</Text>
+        <Text style={[styles.backBtnText, { color: colors.textPrimary }]}>‹</Text>
       </TouchableOpacity>
 
       {/* Floating favourite button */}
@@ -78,7 +79,7 @@ export default function RecipeDetailScreen({ route, navigation }) {
       >
         {favLoading
           ? <ActivityIndicator size="small" color={theme.primary} />
-          : <Text style={[styles.favBtnText, favSaved && { color: '#E53935' }]}>
+          : <Text style={[styles.favBtnText, { color: colors.textSecondary }, favSaved && { color: '#E53935' }]}>
               {favSaved ? '♥' : '♡'}
             </Text>
         }
@@ -100,7 +101,7 @@ export default function RecipeDetailScreen({ route, navigation }) {
         )}
 
         <View style={styles.content}>
-          <Text style={styles.title}>{recipe.title}</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{recipe.title}</Text>
 
           {/* Info chips */}
           <ScrollView
@@ -109,10 +110,10 @@ export default function RecipeDetailScreen({ route, navigation }) {
             style={styles.infoRow}
             contentContainerStyle={styles.infoRowContent}
           >
-            <InfoChip label="Cuisine"   value={recipe.cuisine} />
-            {dietLabel ? <InfoChip label="Diet"     value={dietLabel} /> : null}
-            {recipe.readyInMinutes ? <InfoChip label="Time" value={`${recipe.readyInMinutes} min`} /> : null}
-            {recipe.servings ? <InfoChip label="Servings" value={String(recipe.servings)} /> : null}
+            <InfoChip label="Cuisine"   value={recipe.cuisine} colors={colors} />
+            {dietLabel ? <InfoChip label="Diet"     value={dietLabel} colors={colors} /> : null}
+            {recipe.readyInMinutes ? <InfoChip label="Time" value={`${recipe.readyInMinutes} min`} colors={colors} /> : null}
+            {recipe.servings ? <InfoChip label="Servings" value={String(recipe.servings)} colors={colors} /> : null}
           </ScrollView>
 
           {/* Source link */}
@@ -129,7 +130,7 @@ export default function RecipeDetailScreen({ route, navigation }) {
           {/* Ingredients */}
           {recipe.ingredients?.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionHeading}>Ingredients</Text>
+              <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>Ingredients</Text>
               {recipe.ingredients.map((ing) => (
                 <IngredientItem
                   key={`${ing.id}-${ing.name}`}
@@ -144,7 +145,7 @@ export default function RecipeDetailScreen({ route, navigation }) {
           {/* Instructions */}
           {recipe.steps?.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionHeading}>Instructions</Text>
+              <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>Instructions</Text>
               {recipe.steps.map((s) => (
                 <StepCard key={s.number} number={s.number} step={s.step} />
               ))}
@@ -152,8 +153,8 @@ export default function RecipeDetailScreen({ route, navigation }) {
           )}
 
           {recipe.ingredients?.length === 0 && recipe.steps?.length === 0 && (
-            <View style={styles.noDetail}>
-              <Text style={styles.noDetailText}>
+            <View style={[styles.noDetail, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.noDetailText, { color: colors.textSecondary }]}>
                 Full recipe details not available. Tap "View Full Recipe" for the source.
               </Text>
             </View>
@@ -165,7 +166,7 @@ export default function RecipeDetailScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   backBtnFloat: {
     position: 'absolute', left: 12, zIndex: 20,
     width: 36, height: 36, borderRadius: 18,
@@ -174,7 +175,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15, shadowRadius: 4, elevation: 3,
   },
-  backBtnText: { fontSize: 28, color: Colors.textPrimary, fontWeight: '300', lineHeight: 34 },
+  backBtnText: { fontSize: 28, fontWeight: '300', lineHeight: 34 },
   favBtnFloat: {
     position: 'absolute', right: 12, zIndex: 20,
     width: 36, height: 36, borderRadius: 18,
@@ -183,33 +184,33 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15, shadowRadius: 4, elevation: 3,
   },
-  favBtnText: { fontSize: 20, color: Colors.textSecondary, lineHeight: 24 },
+  favBtnText: { fontSize: 20, lineHeight: 24 },
   hero: { width: '100%', height: 240 },
   heroPlaceholder: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
   heroPlaceholderText: { fontSize: 22, fontWeight: '700', textAlign: 'center', lineHeight: 32 },
   content: { padding: Spacing.md },
   title: {
-    ...Typography.heading1, fontSize: 24, color: Colors.textPrimary,
+    ...Typography.heading1, fontSize: 24,
     marginTop: 12, marginBottom: 14, lineHeight: 32,
   },
   infoRow: { flexGrow: 0, marginBottom: 16 },
   infoRowContent: { gap: 8, paddingRight: 8 },
   infoChip: {
-    backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1,
     borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, alignItems: 'center',
   },
   infoChipLabel: {
-    fontSize: 10, color: Colors.textSecondary, fontWeight: '600',
+    fontSize: 10, fontWeight: '600',
     textTransform: 'uppercase', letterSpacing: 0.5,
   },
-  infoChipValue: { fontSize: 13, color: Colors.textPrimary, fontWeight: '600', marginTop: 1 },
+  infoChipValue: { fontSize: 13, fontWeight: '600', marginTop: 1 },
   sourceBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginBottom: 24 },
   sourceBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   section: { marginBottom: 28 },
-  sectionHeading: { ...Typography.heading2, color: Colors.textPrimary, marginBottom: 12 },
+  sectionHeading: { ...Typography.heading2, marginBottom: 12 },
   noDetail: {
-    padding: 16, backgroundColor: Colors.surface,
-    borderRadius: 12, borderWidth: 1, borderColor: Colors.border,
+    padding: 16,
+    borderRadius: 12, borderWidth: 1,
   },
-  noDetailText: { color: Colors.textSecondary, fontSize: 14, lineHeight: 22, textAlign: 'center' },
+  noDetailText: { fontSize: 14, lineHeight: 22, textAlign: 'center' },
 });

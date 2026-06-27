@@ -4,14 +4,15 @@ import {
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Spacing } from '../constants/theme';
-import { useTheme } from '../context/ThemeContext';
+import { Spacing } from '../constants/theme';
+import { useTheme, useColors } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../api/backend';
 
 export default function LoginScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const colors    = useColors();
   const { login } = useAuth();
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -35,25 +36,23 @@ export default function LoginScreen({ navigation }) {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+      style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: colors.background }]}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        {/* Logo */}
         <View style={styles.logoArea}>
           <View style={[styles.logoCircle, { backgroundColor: theme.primary }]}>
             <Text style={styles.logoLetter}>M</Text>
           </View>
           <Text style={[styles.appName, { color: theme.primary }]}>MealPlanner</Text>
-          <Text style={styles.tagline}>Sign in to sync across devices</Text>
+          <Text style={[styles.tagline, { color: colors.textSecondary }]}>Sign in to sync across devices</Text>
         </View>
 
-        {/* Form card */}
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Email</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Email</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
             placeholder="you@example.com"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -61,11 +60,11 @@ export default function LoginScreen({ navigation }) {
             autoComplete="email"
           />
 
-          <Text style={styles.fieldLabel}>Password</Text>
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Password</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
             placeholder="••••••••"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -86,7 +85,7 @@ export default function LoginScreen({ navigation }) {
         </View>
 
         <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.switchLink}>
-          <Text style={styles.switchText}>
+          <Text style={[styles.switchText, { color: colors.textSecondary }]}>
             Don't have an account?{' '}
             <Text style={[styles.switchAction, { color: theme.primary }]}>Create one</Text>
           </Text>
@@ -97,7 +96,7 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   scroll: { flexGrow: 1, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.lg },
   logoArea: { alignItems: 'center', paddingTop: 32, paddingBottom: 36 },
   logoCircle: {
@@ -106,28 +105,26 @@ const styles = StyleSheet.create({
   },
   logoLetter: { color: '#fff', fontSize: 32, fontWeight: '800' },
   appName: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5, marginBottom: 8 },
-  tagline: { fontSize: 14, color: Colors.textSecondary },
+  tagline: { fontSize: 14 },
   card: {
-    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.border,
     marginBottom: Spacing.lg,
   },
   fieldLabel: {
-    fontSize: 13, fontWeight: '600', color: Colors.textSecondary,
+    fontSize: 13, fontWeight: '600',
     marginBottom: 6, marginTop: 12,
     textTransform: 'uppercase', letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1,
     borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, color: Colors.textPrimary,
+    fontSize: 15,
   },
   btn: { borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 20 },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },
   switchLink: { alignItems: 'center', paddingVertical: 8 },
-  switchText: { fontSize: 14, color: Colors.textSecondary },
+  switchText: { fontSize: 14 },
   switchAction: { fontWeight: '600' },
 });

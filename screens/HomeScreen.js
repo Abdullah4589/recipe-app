@@ -3,8 +3,8 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing, themes } from '../constants/theme';
-import { useTheme } from '../context/ThemeContext';
+import { Typography, Spacing, themes } from '../constants/theme';
+import { useTheme, useColors } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import CuisineChip from '../components/CuisineChip';
 import DietChip from '../components/DietChip';
@@ -21,13 +21,13 @@ const DEFAULT_CUISINES = ['Pakistani', 'Mediterranean'];
 
 export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, isDark, toggleDark } = useTheme();
+  const colors = useColors();
   const { user, logout } = useAuth();
 
   const [selectedCuisines, setSelectedCuisines] = useState(new Set(DEFAULT_CUISINES));
   const [selectedDiet, setSelectedDiet]         = useState('None');
 
-  // Load preferences: try cloud first, fall back to local
   useEffect(() => {
     (async () => {
       try {
@@ -38,7 +38,6 @@ export default function HomeScreen({ navigation }) {
           return;
         }
       } catch (_e) {}
-      // Fall back to local
       try {
         const cuisines = await loadCuisines();
         if (cuisines?.length) setSelectedCuisines(new Set(cuisines));
@@ -62,10 +61,8 @@ export default function HomeScreen({ navigation }) {
 
   const handlePlanMyWeek = async () => {
     const cuisineArr = [...selectedCuisines];
-    // Save to local
     await saveCuisines(cuisineArr);
     await saveDiet(selectedDiet);
-    // Save to cloud (fire and forget)
     preferencesAPI.save(cuisineArr, selectedDiet).catch(() => {});
     navigation.navigate('WeeklyPlan', { cuisines: cuisineArr, diet: selectedDiet });
   };
@@ -78,7 +75,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -89,10 +86,18 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.headerTop}>
             <View>
               <Text style={[styles.appName, { color: theme.primary }]}>MealPlanner</Text>
-              <Text style={styles.subtitle}>Plan your week, eat better</Text>
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Plan your week, eat better</Text>
             </View>
-            {/* Action buttons */}
             <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={toggleDark}
+                style={styles.headerBtn}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              >
+                <Text style={[styles.headerBtnIcon, { color: theme.primary }]}>
+                  {isDark ? '☀' : '☽'}
+                </Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => navigation.navigate('Favourites')}
                 style={styles.headerBtn}
@@ -112,18 +117,18 @@ export default function HomeScreen({ navigation }) {
                 style={styles.headerBtn}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               >
-                <Text style={[styles.headerBtnIcon, { color: Colors.textSecondary }]}>⏻</Text>
+                <Text style={[styles.headerBtnIcon, { color: colors.textSecondary }]}>⏻</Text>
               </TouchableOpacity>
             </View>
           </View>
           {user?.email ? (
-            <Text style={styles.userEmail}>{user.email}</Text>
+            <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{user.email}</Text>
           ) : null}
         </View>
 
         {/* Theme selector */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Theme</Text>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Theme</Text>
           <View style={styles.swatchRow}>
             {Object.values(themes).map((t) => (
               <TouchableOpacity
@@ -135,7 +140,7 @@ export default function HomeScreen({ navigation }) {
                 <View style={[styles.swatch, { backgroundColor: t.primary }]}>
                   {theme.key === t.key && <Text style={styles.swatchCheck}>✓</Text>}
                 </View>
-                <Text style={[styles.swatchLabel, theme.key === t.key && { color: theme.primary, fontWeight: '600' }]}>
+                <Text style={[styles.swatchLabel, { color: colors.textSecondary }, theme.key === t.key && { color: theme.primary, fontWeight: '600' }]}>
                   {t.name}
                 </Text>
               </TouchableOpacity>
@@ -145,8 +150,8 @@ export default function HomeScreen({ navigation }) {
 
         {/* Cuisine selector */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Select Cuisines</Text>
-          <Text style={styles.sectionHint}>At least one required</Text>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Select Cuisines</Text>
+          <Text style={[styles.sectionHint, { color: colors.textSecondary }]}>At least one required</Text>
           <View style={styles.chipsWrap}>
             {ALL_CUISINES.map((c) => (
               <CuisineChip
@@ -161,7 +166,7 @@ export default function HomeScreen({ navigation }) {
 
         {/* Diet selector */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Dietary Preference</Text>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Dietary Preference</Text>
           <View style={styles.chipsWrap}>
             {DIET_OPTIONS.map((d) => (
               <DietChip
@@ -178,7 +183,7 @@ export default function HomeScreen({ navigation }) {
       </ScrollView>
 
       {/* CTA */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+      <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: insets.bottom + 16 }]}>
         <TouchableOpacity
           style={[styles.planBtn, { backgroundColor: theme.primary }]}
           onPress={handlePlanMyWeek}
@@ -192,19 +197,19 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   scroll: { paddingHorizontal: Spacing.md, paddingBottom: 120 },
   header: { marginTop: 20, marginBottom: 28 },
   headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   appName: { ...Typography.heading1, letterSpacing: -0.5 },
-  subtitle: { ...Typography.body, color: Colors.textSecondary, marginTop: 4 },
+  subtitle: { ...Typography.body, marginTop: 4 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   headerBtn: { padding: 6 },
   headerBtnIcon: { fontSize: 20 },
-  userEmail: { fontSize: 12, color: Colors.textSecondary, marginTop: 6 },
+  userEmail: { fontSize: 12, marginTop: 6 },
   section: { marginBottom: 24 },
-  sectionLabel: { ...Typography.heading3, color: Colors.textPrimary, marginBottom: 4 },
-  sectionHint: { fontSize: 12, color: Colors.textSecondary, marginBottom: 10 },
+  sectionLabel: { ...Typography.heading3, marginBottom: 4 },
+  sectionHint: { fontSize: 12, marginBottom: 10 },
   swatchRow: { flexDirection: 'row', marginTop: 8, gap: 12 },
   swatchWrap: { alignItems: 'center', gap: 6 },
   swatch: {
@@ -214,13 +219,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15, shadowRadius: 4, elevation: 3,
   },
   swatchCheck: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  swatchLabel: { fontSize: 11, color: Colors.textSecondary, fontWeight: '400' },
+  swatchLabel: { fontSize: 11, fontWeight: '400' },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4 },
   spacer: { height: 24 },
   footer: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     paddingHorizontal: Spacing.md, paddingTop: 12,
-    backgroundColor: Colors.background, borderTopWidth: 1, borderTopColor: Colors.border,
+    borderTopWidth: 1,
   },
   planBtn: { borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
   planBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },

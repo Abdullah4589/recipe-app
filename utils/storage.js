@@ -7,6 +7,7 @@ const KEYS = {
   CUISINES: '@cuisines',
   DIET: '@diet',
   THEME: '@theme',
+  DARK_MODE: '@dark_mode',
 };
 
 export async function saveMealPlan(plan) {
@@ -47,4 +48,13 @@ export async function saveThemeKey(key) {
 
 export async function loadThemeKey() {
   return AsyncStorage.getItem(KEYS.THEME);
+}
+
+export async function saveDarkMode(isDark) {
+  await AsyncStorage.setItem(KEYS.DARK_MODE, isDark ? '1' : '0');
+}
+
+export async function loadDarkMode() {
+  const val = await AsyncStorage.getItem(KEYS.DARK_MODE);
+  return val === '1';
 }
