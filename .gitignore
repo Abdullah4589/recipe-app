@@ -54,3 +54,7 @@ yarn.lock
 *.key
 *.mobileprovision
 *.orig.*
+CLAUDE.md
+meal-planner-prompt_1.md
+meal-planner-prompt_2.md
+meal-planner-prompt.md
