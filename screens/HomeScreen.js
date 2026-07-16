@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   appName: { ...Typography.heading1, letterSpacing: -0.5 },
   subtitle: { ...Typography.body, marginTop: 4 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, paddingRight: 8 },
   headerBtn: { padding: 6 },
   headerBtnIcon: { fontSize: 20 },
   userEmail: { fontSize: 12, marginTop: 6 },
