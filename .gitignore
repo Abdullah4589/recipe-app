@@ -69,6 +69,10 @@ meal-planner-prompt.md
 # Expo web export (rebuilt by scripts/serve-web.js for e2e)
 dist/
 
+# scripts/test-loop.js working files
+loop-report.json
+.loop-state.json
+
 # CLAUDE.md and .claude/ are deliberately committed — the agent rules and
 # guardrails are part of the project, not personal local config.
 .claude/settings.local.json

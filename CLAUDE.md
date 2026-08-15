@@ -129,6 +129,8 @@ Three targets, deliberately separate (ADR-006):
 
 - `/verify` — run both tiers, classify every failure, report. Does not fix.
 - `/feature <description>` — test → implement → review handoff chain.
+- `/fix-loop [tier]` — iterate run → fix → re-run, bounded. Stops on
+  no-progress or regression rather than spinning; max 5 iterations.
 - `/ship` — pre-flight a branch for release; recommends, never deploys.
 - Agents: `test-author` (writes tests, never fixes app code), `bug-fixer`
   (fixes app code, never edits tests), `pr-reviewer` (reports, never edits),
@@ -154,12 +156,15 @@ npx expo start --clear
 # Set EXPO_PUBLIC_BACKEND_URL in .env to your LAN IP (not localhost)
 ```
 
-### Tests
+### Lint and tests
 ```bash
+npm run lint               # ESLint; CI runs it with --max-warnings=0
 npm run test:integration   # fast — HTTP against the real app, no browser
 npm run test:e2e           # slow — real UI in Chromium
 npm run test               # both
 ```
+Formatting is deliberately not linted and there is no Prettier — see the note
+at the bottom of `eslint.config.js` for why, and what would change it.
 Both run against a disposable in-memory MongoDB, never the deployed backend.
 See `tests/README.md` for the gotchas, `docs/WORKFLOW.md` for CI and deploys.
 

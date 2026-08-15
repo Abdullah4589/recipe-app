@@ -110,6 +110,27 @@ jobs:
           fi
 
   # ──────────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    needs: guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # --max-warnings=0 on purpose. The two react-hooks/exhaustive-deps
+      # warnings currently in the tree are each suppressed inline with a
+      # comment explaining why the effect must not re-run, so a *new* warning
+      # means an unexamined one. Warnings nobody has to act on become noise
+      # that hides the next real finding.
+      - run: npx eslint . --max-warnings=0
+
+  # ──────────────────────────────────────────────────────────────────────────
   integration:
     name: Integration tests
     needs: guardrails
@@ -189,15 +210,17 @@ jobs:
   ci-passed:
     name: CI passed
     if: always()
-    needs: [guardrails, integration, e2e]
+    needs: [guardrails, lint, integration, e2e]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if any job did not succeed
         run: |
           echo "guardrails:  ${{ needs.guardrails.result }}"
+          echo "lint:        ${{ needs.lint.result }}"
           echo "integration: ${{ needs.integration.result }}"
           echo "e2e:         ${{ needs.e2e.result }}"
           if [ "${{ needs.guardrails.result }}" != "success" ] \
+          || [ "${{ needs.lint.result }}" != "success" ] \
           || [ "${{ needs.integration.result }}" != "success" ] \
           || [ "${{ needs.e2e.result }}" != "success" ]; then
             exit 1
