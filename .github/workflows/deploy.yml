@@ -51,10 +51,46 @@ jobs:
             echo "proceed=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Report whether deploys are switched on
+        # DEPLOY_ENABLED is a repository variable acting as a master switch,
+        # currently off: the Railway trial expired and the backend service was
+        # torn down, so every deploy failed on billing rather than on anything
+        # in this repo. A workflow that is always red teaches people to ignore
+        # red, which is worse than not running it.
+        #
+        # The jobs below are *skipped*, not passed. That distinction matters —
+        # a green tick next to "Deploy" that did not deploy anything is a lie,
+        # and exactly the kind of false signal the rest of this pipeline exists
+        # to avoid. Skipped renders grey and reads as "did not run".
+        #
+        # Re-enable with:  gh variable set DEPLOY_ENABLED --body true
+        run: |
+          if [ "${{ vars.DEPLOY_ENABLED }}" = "true" ]; then
+            echo "::notice::Deploys are ENABLED."
+            echo "### Deploys enabled" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Deploys are PAUSED (repository variable DEPLOY_ENABLED is not 'true')."
+            {
+              echo "### ⏸️ Deploys are paused — nothing was deployed"
+              echo ""
+              echo "The deploy jobs were **skipped**, not run. This commit is **not** live."
+              echo ""
+              echo "Reason: the Railway backend service no longer exists (trial expired),"
+              echo "so every deploy failed on billing rather than on a problem in this repo."
+              echo ""
+              echo "Re-enable once hosting is sorted:"
+              echo '```'
+              echo "gh variable set DEPLOY_ENABLED --body true"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   backend:
     name: Deploy backend (Railway)
     needs: gate
-    if: needs.gate.outputs.proceed == 'true'
+    # Both conditions required: CI must have passed AND deploys must be
+    # switched on. See the gate job for why the switch exists.
+    if: needs.gate.outputs.proceed == 'true' && vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     # A GitHub Environment is what makes a required-reviewer rule possible.
     # Configure "production" in repo settings to require manual approval here.
@@ -108,7 +144,7 @@ jobs:
   web:
     name: Deploy web (Vercel)
     needs: [gate, backend]
-    if: needs.gate.outputs.proceed == 'true'
+    if: needs.gate.outputs.proceed == 'true' && vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment:
       name: production
