@@ -84,12 +84,18 @@ function collectSpecs(node, out = []) {
   return out;
 }
 
+// Matches ANSI colour codes in Playwright error output. Constructed rather
+// than written as a regex literal: a raw ESC byte in source is invisible in
+// diffs and code review, and escaping it inside a literal trips
+// no-control-regex.
+const ANSI = new RegExp(String.fromCharCode(27) + '\\[[0-9;]*m', 'g');
+
 function firstError(test) {
   for (const result of test.results || []) {
     const msg = result.error?.message || result.errors?.[0]?.message;
     if (msg) {
       // Strip ANSI and collapse to something diffable between iterations.
-      return msg.replace(/\[[0-9;]*m/g, '').split('\n').slice(0, 3).join(' ').trim();
+      return msg.replace(ANSI, '').split('\n').slice(0, 3).join(' ').trim();
     }
   }
   return '(no error message)';
