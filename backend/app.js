@@ -2,6 +2,7 @@
 // app without triggering a real MongoDB connection or app.listen().
 const express = require('express');
 const cors    = require('cors');
+const { errorHandler } = require('./middleware/errorHandler');
 
 function createApp() {
   const app = express();
@@ -15,6 +16,12 @@ function createApp() {
   app.use('/api/preferences',    require('./routes/preferences'));
 
   app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+
+  app.use((_req, res) => res.status(404).json({ message: 'Route not found' }));
+
+  // Must be registered last — Express picks error middleware by arity and
+  // only reaches it after every other layer has passed.
+  app.use(errorHandler);
 
   return app;
 }
