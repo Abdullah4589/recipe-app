@@ -18,23 +18,32 @@ export default function RegisterScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm]   = useState('');
   const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+
+  // See LoginScreen — Alert.alert is a no-op on react-native-web, so the
+  // inline banner is the error path that actually works everywhere.
+  const fail = (message) => {
+    setError(message);
+    Alert.alert('Registration Failed', message);
+  };
 
   const handleRegister = async () => {
+    setError('');
     if (!email.trim() || !password.trim()) {
-      return Alert.alert('Error', 'Please enter your email and password.');
+      return fail('Please enter your email and password.');
     }
     if (password !== confirm) {
-      return Alert.alert('Error', 'Passwords do not match.');
+      return fail('Passwords do not match.');
     }
     if (password.length < 6) {
-      return Alert.alert('Error', 'Password must be at least 6 characters.');
+      return fail('Password must be at least 6 characters.');
     }
     setLoading(true);
     try {
       const data = await authAPI.register(email.trim().toLowerCase(), password);
       await login(data);
     } catch (e) {
-      Alert.alert('Registration Failed', e.message);
+      fail(e.message);
     } finally {
       setLoading(false);
     }
@@ -57,9 +66,14 @@ export default function RegisterScreen({ navigation }) {
         <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Join MealPlanner</Text>
         <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>Sync your meals across all devices</Text>
 
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]} testID="register-card">
+          {error ? (
+            <Text testID="auth-error" style={styles.errorText}>{error}</Text>
+          ) : null}
+
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Email</Text>
           <TextInput
+            testID="register-email"
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
             placeholder="you@example.com"
             placeholderTextColor={colors.textSecondary}
@@ -73,6 +87,7 @@ export default function RegisterScreen({ navigation }) {
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Password</Text>
           <TextInput
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
+            testID="register-password"
             placeholder="Min. 6 characters"
             placeholderTextColor={colors.textSecondary}
             value={password}
@@ -84,6 +99,7 @@ export default function RegisterScreen({ navigation }) {
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Confirm Password</Text>
           <TextInput
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
+            testID="register-confirm"
             placeholder="Repeat your password"
             placeholderTextColor={colors.textSecondary}
             value={confirm}
@@ -93,6 +109,7 @@ export default function RegisterScreen({ navigation }) {
           />
 
           <TouchableOpacity
+            testID="register-submit"
             style={[styles.btn, { backgroundColor: theme.primary }]}
             onPress={handleRegister}
             disabled={loading}
@@ -105,7 +122,7 @@ export default function RegisterScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.switchLink}>
+        <TouchableOpacity testID="go-to-login" onPress={() => navigation.navigate('Login')} style={styles.switchLink}>
           <Text style={[styles.switchText, { color: colors.textSecondary }]}>
             Already have an account?{' '}
             <Text style={[styles.switchAction, { color: theme.primary }]}>Sign In</Text>
@@ -143,6 +160,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
     fontSize: 15,
+  },
+  errorText: {
+    color: '#D7263D', fontSize: 13, fontWeight: '600',
+    marginTop: 4, marginBottom: 4,
   },
   btn: { borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 20 },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },

@@ -60,9 +60,12 @@ export default function RecipeDetailScreen({ route, navigation }) {
   const dietLabel = recipe.diets?.[0];
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+    <View testID="recipe-detail-screen" style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Floating back button */}
       <TouchableOpacity
+        testID="back-button"
+        accessibilityRole="button"
+        accessibilityLabel="Back"
         style={[styles.backBtnFloat, { top: insets.top + 8 }]}
         onPress={() => navigation.goBack()}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -72,6 +75,10 @@ export default function RecipeDetailScreen({ route, navigation }) {
 
       {/* Floating favourite button */}
       <TouchableOpacity
+        testID="favourite-toggle"
+        accessibilityRole="button"
+        accessibilityLabel={favSaved ? 'Saved to favourites' : 'Save to favourites'}
+        accessibilityState={{ selected: favSaved, disabled: favLoading || favSaved }}
         style={[styles.favBtnFloat, { top: insets.top + 8 }]}
         onPress={handleFavourite}
         disabled={favLoading || favSaved}

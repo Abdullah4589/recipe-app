@@ -43,6 +43,9 @@ export default function FavouritesScreen({ navigation }) {
     const badge = CuisineBadge[recipe.cuisine] || { bg: theme.primaryLight, text: theme.primary };
     return (
       <TouchableOpacity
+        testID="favourite-row"
+        accessibilityRole="button"
+        accessibilityLabel={recipe.title}
         style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
         onPress={() => navigation.navigate('RecipeDetail', { recipe })}
         activeOpacity={0.8}
@@ -77,9 +80,12 @@ export default function FavouritesScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+    <View testID="favourites-screen" style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={[styles.topBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity
+          testID="back-button"
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           onPress={() => navigation.goBack()}
           style={styles.backBtn}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

@@ -7,7 +7,13 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "vercel-build": "expo export"
+    "vercel-build": "expo export",
+    "build:web": "expo export --platform web --output-dir dist",
+    "serve:web": "node scripts/serve-web.js",
+    "test": "playwright test",
+    "test:integration": "playwright test --project=integration",
+    "test:e2e": "playwright test --project=e2e",
+    "test:report": "playwright show-report"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
@@ -28,7 +34,9 @@
     "react-native-web": "^0.21.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.24.0"
+    "@babel/core": "^7.24.0",
+    "@playwright/test": "^1.62.1",
+    "jsonwebtoken": "^9.0.3"
   },
   "private": true
 }

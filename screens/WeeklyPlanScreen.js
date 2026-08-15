@@ -151,10 +151,13 @@ export default function WeeklyPlanScreen({ route, navigation }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+    <View testID="weekly-plan-screen" style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Top bar */}
       <View style={[styles.topBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity
+          testID="back-button"
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           onPress={() => navigation.goBack()}
           style={styles.backBtn}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -163,6 +166,9 @@ export default function WeeklyPlanScreen({ route, navigation }) {
         </TouchableOpacity>
         <Text style={[styles.topTitle, { color: colors.textPrimary }]}>This Week</Text>
         <TouchableOpacity
+          testID="regenerate-plan"
+          accessibilityRole="button"
+          accessibilityLabel="Regenerate plan"
           onPress={handleRegenerate}
           style={styles.regenBtn}
           disabled={loading}
@@ -229,6 +235,7 @@ export default function WeeklyPlanScreen({ route, navigation }) {
       {/* Meal list */}
       {plan && (
         <FlatList
+          testID="meal-list"
           data={MEAL_TYPES}
           keyExtractor={item => item}
           renderItem={renderMeal}

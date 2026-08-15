@@ -17,17 +17,28 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+
+  // Errors render inline *and* fire an Alert. The inline banner is the real
+  // one: Alert.alert is a no-op under react-native-web, so on web (and in the
+  // Playwright e2e suite, which drives the web build) an Alert-only failure
+  // path is completely invisible — the button just stops spinning.
+  const fail = (message) => {
+    setError(message);
+    Alert.alert('Sign In Failed', message);
+  };
 
   const handleLogin = async () => {
+    setError('');
     if (!email.trim() || !password.trim()) {
-      return Alert.alert('Error', 'Please enter your email and password.');
+      return fail('Please enter your email and password.');
     }
     setLoading(true);
     try {
       const data = await authAPI.login(email.trim().toLowerCase(), password);
       await login(data);
     } catch (e) {
-      Alert.alert('Sign In Failed', e.message);
+      fail(e.message);
     } finally {
       setLoading(false);
     }
@@ -47,9 +58,14 @@ export default function LoginScreen({ navigation }) {
           <Text style={[styles.tagline, { color: colors.textSecondary }]}>Sign in to sync across devices</Text>
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]} testID="login-card">
+          {error ? (
+            <Text testID="auth-error" style={styles.errorText}>{error}</Text>
+          ) : null}
+
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Email</Text>
           <TextInput
+            testID="login-email"
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
             placeholder="you@example.com"
             placeholderTextColor={colors.textSecondary}
@@ -62,6 +78,7 @@ export default function LoginScreen({ navigation }) {
 
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Password</Text>
           <TextInput
+            testID="login-password"
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
             placeholder="••••••••"
             placeholderTextColor={colors.textSecondary}
@@ -72,6 +89,7 @@ export default function LoginScreen({ navigation }) {
           />
 
           <TouchableOpacity
+            testID="login-submit"
             style={[styles.btn, { backgroundColor: theme.primary }]}
             onPress={handleLogin}
             disabled={loading}
@@ -84,7 +102,7 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.switchLink}>
+        <TouchableOpacity testID="go-to-register" onPress={() => navigation.navigate('Register')} style={styles.switchLink}>
           <Text style={[styles.switchText, { color: colors.textSecondary }]}>
             Don't have an account?{' '}
             <Text style={[styles.switchAction, { color: theme.primary }]}>Create one</Text>
@@ -121,6 +139,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
     fontSize: 15,
+  },
+  errorText: {
+    color: '#D7263D', fontSize: 13, fontWeight: '600',
+    marginTop: 4, marginBottom: 4,
   },
   btn: { borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 20 },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },

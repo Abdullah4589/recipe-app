@@ -1,0 +1,158 @@
+name: Deploy
+
+# The only automated path to production.
+#
+# `workflow_run` rather than `push` on purpose: this cannot start until CI has
+# *finished and succeeded* on the same commit. Duplicating the test steps in a
+# deploy workflow would let someone shorten them later and quietly remove the
+# gate; depending on CI's conclusion makes that impossible.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to confirm a manual deploy'
+        required: true
+        default: ''
+
+concurrency:
+  # Never let two deploys race to the same environment.
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Check deploy is allowed
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.decide.outputs.proceed }}
+    steps:
+      - id: decide
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ inputs.confirm }}" = "deploy" ]; then
+              echo "Manual deploy confirmed."
+              echo "proceed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Manual deploy not confirmed — type 'deploy' in the confirm input."
+              exit 1
+            fi
+          elif [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
+            echo "CI succeeded on ${{ github.event.workflow_run.head_sha }}."
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "CI concluded '${{ github.event.workflow_run.conclusion }}' — not deploying."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  backend:
+    name: Deploy backend (Railway)
+    needs: gate
+    if: needs.gate.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    # A GitHub Environment is what makes a required-reviewer rule possible.
+    # Configure "production" in repo settings to require manual approval here.
+    environment:
+      name: production
+      url: https://recipe-app-backend-production-4bea.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Verify required secrets are configured
+        # Fail before touching the deploy rather than half-deploying and
+        # discovering the service cannot start.
+        run: |
+          missing=0
+          for var in RAILWAY_TOKEN; do
+            if [ -z "${!var}" ]; then
+              echo "::error::Missing repository secret: $var"
+              missing=1
+            fi
+          done
+          exit $missing
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Deploy
+        run: npx --yes @railway/cli up --service backend --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Smoke test
+        # A deploy that reports success while the service returns 500 is not a
+        # successful deploy. Retry briefly to allow for cold start.
+        run: |
+          URL="https://recipe-app-backend-production-4bea.up.railway.app/api/health"
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$URL" || true)
+            echo "attempt $i: $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 10
+          done
+          echo "::error::Backend did not return 200 from /api/health after deploy."
+          exit 1
+
+  web:
+    name: Deploy web (Vercel)
+    needs: [gate, backend]
+    if: needs.gate.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Verify required secrets are configured
+        run: |
+          missing=0
+          for var in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!var}" ]; then
+              echo "::error::Missing repository secret: $var"
+              missing=1
+            fi
+          done
+          exit $missing
+        env:
+          VERCEL_TOKEN:      ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build web bundle
+        # EXPO_PUBLIC_* is inlined at build time, so the production backend URL
+        # has to be set here, not on the hosting side.
+        run: npm run build:web
+        env:
+          EXPO_PUBLIC_BACKEND_URL: ${{ vars.PRODUCTION_BACKEND_URL || 'https://recipe-app-backend-production-4bea.up.railway.app/api' }}
+
+      - name: Deploy to Vercel
+        run: npx --yes vercel deploy dist --prod --yes --token "$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN:      ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  # Android is deliberately NOT automated.
+  #
+  # An EAS Update ships JS straight to installed apps with no review and no
+  # staged rollout configured, so a bad update reaches every user at once with
+  # no quick way back. Until there is a rollout strategy, that stays a manual,
+  # human decision:
+  #
+  #   eas update --branch main --message "<what changed>"
+  #   eas build  --platform android --profile production

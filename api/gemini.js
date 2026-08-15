@@ -366,15 +366,27 @@ async function pickRecipe(cuisine, diet, usedIds) {
   const pool = [...list].sort(() => Math.random() - 0.5).filter(m => !usedIds.has(m.idMeal));
   const candidates = (pool.length ? pool : [...list].sort(() => Math.random() - 0.5)).slice(0, 10);
 
+  // Pass 1 — prefer a dish this week hasn't used yet.
   for (const c of candidates) {
     await delay(100);
     const full = await fetchById(c.idMeal);
     if (full && matchesDiet(full, diet)) return normalize(full, cuisine);
   }
-  for (const c of candidates) {
+
+  // Pass 2 — allow repeating a dish already used this week.
+  //
+  // This relaxes *uniqueness only*. It used to relax the diet filter too and
+  // return literally any recipe, which meant a vegetarian could be served
+  // chicken whenever the unused pool ran dry. A repeated meal is a cosmetic
+  // problem; a meat dish in a vegetarian plan is a broken promise, so the
+  // diet constraint is the one that must never be traded away.
+  for (const c of list) {
     const full = await fetchById(c.idMeal);
-    if (full) return normalize(full, cuisine);
+    if (full && matchesDiet(full, diet)) return normalize(full, cuisine);
   }
+
+  // Nothing in this cuisine fits the diet. The caller substitutes a stub
+  // rather than showing something the user can't eat.
   return null;
 }
 
