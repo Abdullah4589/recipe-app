@@ -82,7 +82,12 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy
-        run: npx --yes @railway/cli up --service backend --detach
+        # --service must match the service name in the Railway project exactly.
+        # It was `backend` here, which does not exist, and the CLI's only reply
+        # is "Service not found" with no hint of what does exist — so if this
+        # step fails that way again, check the name on the service card in the
+        # Railway dashboard first.
+        run: npx --yes @railway/cli up --service recipe-app-backend --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
