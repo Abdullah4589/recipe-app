@@ -1,0 +1,182 @@
+name: CI
+
+# Runs on every PR and every push to main. Nothing merges without this green,
+# and deploy.yml refuses to run unless this succeeded first.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  # A new push to the same branch makes the in-flight run obsolete.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Cheap checks first, so an obvious mistake fails in ~30s rather than after
+  # a five-minute browser suite.
+  # ──────────────────────────────────────────────────────────────────────────
+  guardrails:
+    name: Guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need history to diff a PR against its base.
+          fetch-depth: 0
+
+      - name: No secrets in the diff
+        # The local PreToolUse hooks only protect the machine they run on.
+        # This is the same check at the point where it cannot be bypassed by
+        # editing a settings file.
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="origin/${{ github.base_ref }}...HEAD"
+          else
+            RANGE="HEAD~1...HEAD"
+          fi
+          echo "Scanning $RANGE"
+
+          # Added lines only — matching removed lines would make a commit that
+          # *deletes* a secret fail forever.
+          ADDED=$(git diff "$RANGE" --unified=0 | grep '^+' | grep -v '^+++' || true)
+
+          FAIL=0
+          check() {
+            # -e is required: several patterns start with '-', which grep would
+            # otherwise try to parse as options.
+            if echo "$ADDED" | grep -qEi -e "$1"; then
+              echo "::error::Possible secret in diff: $2"
+              FAIL=1
+            fi
+          }
+          check 'mongodb(\+srv)?://[^[:space:]:]+:[^[:space:]@]+@' 'MongoDB URI with credentials'
+          check 'AKIA[0-9A-Z]{16}'                                 'AWS access key id'
+          check 'AIza[0-9A-Za-z_-]{35}'                            'Google API key'
+          check 'gh[pousr]_[0-9A-Za-z]{36,}'                       'GitHub token'
+          check '-----BEGIN .*PRIVATE KEY-----'                    'private key block'
+
+          exit $FAIL
+
+      - name: No committed env files
+        run: |
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.example$'; then
+            echo "::error::A .env file is tracked. Remove it and rotate the credentials it held."
+            exit 1
+          fi
+
+      - name: Backend URL is not hardcoded
+        # Guards the property that makes e2e possible at all (ADR-006).
+        run: |
+          if ! grep -q 'EXPO_PUBLIC_BACKEND_URL' api/backend.js; then
+            echo "::error::api/backend.js must read EXPO_PUBLIC_BACKEND_URL, not hardcode a URL."
+            exit 1
+          fi
+
+      - name: Test suite has not been disabled
+        # A green CI achieved by skipping tests is worse than a red one.
+        run: |
+          if grep -rnE '\b(test|describe)\.(skip|only)\b' tests/; then
+            echo "::error::Found .skip or .only in tests/. Remove it, or fix the underlying failure."
+            exit 1
+          fi
+
+  # ──────────────────────────────────────────────────────────────────────────
+  integration:
+    name: Integration tests
+    needs: guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm ci --prefix backend
+
+      - name: Cache MongoDB binary
+        # mongodb-memory-server downloads a server binary on first use;
+        # without this every run pays for it.
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongo-binaries-${{ runner.os }}
+
+      - run: npx playwright test --project=integration
+        env:
+          CI: true
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: integration-report
+          path: playwright-report/
+          retention-days: 7
+
+  # ──────────────────────────────────────────────────────────────────────────
+  e2e:
+    name: E2E tests (browser)
+    needs: guardrails
+    runs-on: ubuntu-latest
+    # Expo export plus a real browser suite. Generous, but bounded — a hung
+    # job should fail, not burn an hour.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm ci --prefix backend
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongo-binaries-${{ runner.os }}
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - run: npx playwright test --project=e2e
+        env:
+          CI: true
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: e2e-report
+          # Traces, screenshots and video for anything that failed — a browser
+          # failure is close to undebuggable from a log line alone.
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # Single required status check for branch protection, so adding a job later
+  # does not mean reconfiguring the protection rule.
+  ci-passed:
+    name: CI passed
+    if: always()
+    needs: [guardrails, integration, e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any job did not succeed
+        run: |
+          echo "guardrails:  ${{ needs.guardrails.result }}"
+          echo "integration: ${{ needs.integration.result }}"
+          echo "e2e:         ${{ needs.e2e.result }}"
+          if [ "${{ needs.guardrails.result }}" != "success" ] \
+          || [ "${{ needs.integration.result }}" != "success" ] \
+          || [ "${{ needs.e2e.result }}" != "success" ]; then
+            exit 1
+          fi

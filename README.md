@@ -2,6 +2,18 @@
 
 A cross-platform **React Native / Expo** meal planning app with a **Node.js + Express + MongoDB** backend. Plan your week's meals, save favourites, create custom recipes, and sync everything across devices.
 
+**Engineering docs**
+
+| | |
+|---|---|
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Why this stack — every choice with its alternatives, the cost accepted, and what would change it |
+| [`docs/WORKFLOW.md`](docs/WORKFLOW.md) | Guardrails, agent roles, CI, branch protection, deployment gates |
+| [`tests/README.md`](tests/README.md) | The two test tiers and the react-native-web gotchas that shape them |
+| [`CLAUDE.md`](CLAUDE.md) | Project rules for AI agents — enforced by `.claude/hooks/` and CI |
+
+**Tests:** 53 integration + 8 browser e2e, all against a disposable in-memory
+MongoDB. `npm run test`
+
 ---
 
 ## Screenshots
