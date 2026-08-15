@@ -115,6 +115,10 @@ Three targets, deliberately separate (ADR-006):
 | EAS | Android build / OTA update | Manual, by the user |
 
 - **CI is the only automated path to production.** No agent-initiated deploys.
+  This holds only because the platforms' own GitHub integrations were turned
+  off — Vercel via `git.deploymentEnabled.main = false` in `vercel.json`,
+  Railway in its dashboard. Re-enabling either silently reintroduces an
+  ungated path that beats CI to production. See `docs/WORKFLOW.md`.
 - **Check env parity before shipping.** Every `process.env.X` newly referenced
   must exist in the target's environment. A missing variable fails at runtime,
   not at build time — the worst time to find out.
