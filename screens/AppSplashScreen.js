@@ -1,8 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Animated, StyleSheet } from 'react-native';
 import { defaultTheme } from '../constants/theme';
-
-const { width } = Dimensions.get('window');
 
 export default function AppSplashScreen({ onFinish }) {
   const opacity = useRef(new Animated.Value(0)).current;
@@ -40,6 +38,11 @@ export default function AppSplashScreen({ onFinish }) {
         useNativeDriver: true,
       }),
     ]).start(() => onFinish());
+    // Intentionally runs once on mount. exhaustive-deps warns about
+    // onFinish and the three Animated.Values; adding them would restart the
+    // whole animation sequence whenever the parent re-rendered, so the splash
+    // would never finish. The Animated.Values are refs and never change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

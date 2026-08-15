@@ -37,13 +37,18 @@ export default function HomeScreen({ navigation }) {
           if (cloudPrefs.diet) setSelectedDiet(cloudPrefs.diet);
           return;
         }
-      } catch (_e) {}
+      } catch (_e) {
+        // Offline or not signed in yet — fall through to the local cache
+        // below. Preferences are not worth surfacing an error for.
+      }
       try {
         const cuisines = await loadCuisines();
         if (cuisines?.length) setSelectedCuisines(new Set(cuisines));
         const diet = await loadDiet();
         if (diet) setSelectedDiet(diet);
-      } catch (_e) {}
+      } catch (_e) {
+        // No cached preferences either; the defaults already in state stand.
+      }
     })();
   }, []);
 

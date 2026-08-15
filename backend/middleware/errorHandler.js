@@ -24,8 +24,9 @@ function badRequest(message = 'Bad request') {
   return new HttpError(400, message);
 }
 
-// eslint-disable-next-line no-unused-vars -- Express identifies error
-// middleware by arity; the 4th param must stay even though it is unused.
+// Express identifies error middleware by arity, so the 4th parameter has to
+// stay even though nothing here calls it. Named with a leading underscore so
+// the no-unused-vars rule accepts it (see eslint.config.js).
 function errorHandler(err, _req, res, _next) {
   // Deliberate errors from route code.
   if (err instanceof HttpError) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, ScrollView, FlatList, TouchableOpacity,
+  View, Text, FlatList, TouchableOpacity,
   ActivityIndicator, StyleSheet, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -75,7 +75,10 @@ export default function WeeklyPlanScreen({ route, navigation }) {
           setLoading(false);
           return;
         }
-      } catch (_e) {}
+      } catch (_e) {
+        // Cloud unreachable — fall through to the local cache below rather
+        // than blocking the screen on a network round trip.
+      }
       try {
         const cached = await loadMealPlan();
         if (cached?.plan) {
@@ -84,10 +87,16 @@ export default function WeeklyPlanScreen({ route, navigation }) {
           setLoading(false);
           return;
         }
-      } catch (_e) {}
+      } catch (_e) {
+        // No usable cache either — generate a fresh plan below.
+      }
       generateFresh();
     };
     init();
+    // Intentionally runs once on mount. Including generateFresh would rebuild
+    // the entire week — dozens of TheMealDB requests — on every render that
+    // changes its identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleRegenerate = () => generateFresh();
