@@ -149,6 +149,44 @@ and succeeded on that commit. It does not re-run the tests itself, on purpose:
 duplicated test steps in a deploy workflow can be shortened later, quietly
 removing the gate. Depending on CI's conclusion makes that impossible.
 
+### The gate only works if nothing else can deploy
+
+Adding a gated workflow does not remove the ungated paths that already exist.
+Both hosting platforms were connected directly to this repo and deploying on
+every push to `main` on their own — Vercel was putting production live roughly
+90 seconds *before* the gated workflow even started. For a while this document
+claimed CI was the only automated path to production while that was simply not
+true.
+
+A deployment gate is only as strong as the number of ways around it, so both
+were closed:
+
+| Path | Closed by |
+|---|---|
+| Vercel Git integration | `git.deploymentEnabled.main = false` in `vercel.json` — in the repo, reviewable, shows up in a diff. PR previews stay enabled. |
+| Railway GitHub autodeploy | Disabled in Railway → Service Settings → Deploy. Dashboard-only; nothing in the repo enforces it. |
+
+That Vercel key is deliberately terse and uncommented. `vercel.json` is
+schema-validated and the documented property list has no comment field, so an
+explanatory `"//"` key risks failing validation and breaking the build — which
+would be an expensive way to hold a comment. The explanation lives here
+instead.
+
+Note the two are asymmetric in how well they hold. The Vercel setting is code:
+changing it requires a commit, a PR and a review. The Railway one is a toggle
+in someone's browser. Equivalent today, not equally durable.
+
+Railway also offers a **Wait for CI** setting that keeps its integration but
+holds deploys until GitHub checks pass. It was not used here: it watches *all*
+check suites on the commit, and this repo has `vercel[bot]` posting its own, so
+it inherits an unrelated app's ability to block or mis-trigger deploys. One
+path with one owner is easier to reason about than two paths with a dependency
+between them.
+
+**The Railway one is a standing risk.** It lives in a dashboard, so anyone can
+re-enable it and nothing in this repo would show that it happened. If a deploy
+ever appears that CI did not authorise, check that setting first.
+
 | Target | Trigger | Gate |
 |---|---|---|
 | Railway (backend) | CI green on `main` | `production` environment + health smoke test |

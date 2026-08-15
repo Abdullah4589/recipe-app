@@ -236,8 +236,18 @@ backend (ADR-007). Before that change the URL was a literal on line 3, and
 browser e2e was impossible for exactly that reason.
 
 **Cost accepted.** Three dashboards, three sets of credentials, three ways for
-a deploy to half-succeed. Mitigated by CI gating all three on the same test
-run (`.github/workflows/ci.yml`).
+a deploy to half-succeed.
+
+**And a cost we did not notice we were paying.** Both Vercel and Railway were
+connected directly to this repo and already auto-deploying on every push to
+`main`. Writing a gated `deploy.yml` did not change that — it just added a
+*second* path, and the ungated one was winning: Vercel put production live
+around 90 seconds before the gated workflow started. The lesson generalises
+beyond this project: **a new gate does not remove the old doors.** Adding the
+control is the easy half; finding what already bypasses it is the half that
+actually decides whether the control means anything. Both integrations are now
+off (`vercel.json`, and Railway's dashboard), and `docs/WORKFLOW.md` records
+that the Railway one can be silently switched back on.
 
 ---
 
