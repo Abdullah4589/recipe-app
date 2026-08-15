@@ -45,14 +45,35 @@ jobs:
 
           # Added lines only — matching removed lines would make a commit that
           # *deletes* a secret fail forever.
-          ADDED=$(git diff "$RANGE" --unified=0 | grep '^+' | grep -v '^+++' || true)
+          #
+          # Four paths are excluded because their job is to *define* these
+          # patterns, so scanning them means the detector always detects
+          # itself. They are small, and every line in them is a regex or a
+          # documented placeholder rather than a value:
+          #   .env.example                  placeholder connection string
+          #   .claude/hooks/guard-write.js  the same patterns, client-side
+          #   .claude/agents/*.md           the release-checker's grep command
+          #   .github/workflows/ci.yml      this file
+          #
+          # Written to a file rather than piped: `grep -q` exits on first match
+          # and closes the pipe, which makes the upstream `echo` die with
+          # "write error: Broken pipe" and pollutes the log.
+          git diff "$RANGE" --unified=0 -- . \
+            ':(exclude).env.example' \
+            ':(exclude).claude/hooks/guard-write.js' \
+            ':(exclude).claude/agents/*.md' \
+            ':(exclude).github/workflows/ci.yml' \
+            | grep '^+' | grep -v '^+++' > added.txt || true
+
+          echo "Scanning $(wc -l < added.txt) added lines"
 
           FAIL=0
           check() {
             # -e is required: several patterns start with '-', which grep would
             # otherwise try to parse as options.
-            if echo "$ADDED" | grep -qEi -e "$1"; then
+            if grep -qEi -e "$1" added.txt; then
               echo "::error::Possible secret in diff: $2"
+              grep -nEi -e "$1" added.txt | head -5
               FAIL=1
             fi
           }
@@ -62,6 +83,7 @@ jobs:
           check 'gh[pousr]_[0-9A-Za-z]{36,}'                       'GitHub token'
           check '-----BEGIN .*PRIVATE KEY-----'                    'private key block'
 
+          rm -f added.txt
           exit $FAIL
 
       - name: No committed env files
