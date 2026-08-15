@@ -62,6 +62,51 @@ the code it already wrote is correct. Splitting the roles removes the hatch —
 Chained by `/feature <description>`: specify → red tests → implement → review,
 with a gate between each stage.
 
+## The fix loop
+
+`/fix-loop [tier]` iterates run → diagnose → fix → re-run. The interesting
+engineering is not the loop, it is the **exit conditions** — an agent told to
+"keep going until the tests pass" has two failure modes, and both are worse
+than stopping:
+
+1. **It spins.** Reattempting the same fix on the same failure forever.
+2. **It escapes.** The fastest route out of "make the suite green" is to
+   weaken the assertion, and a loop that only measures greenness accepts that
+   happily.
+
+`scripts/test-loop.js` owns the parts a model should not judge by eye: running
+the suite, extracting exactly which tests failed, and diffing that set against
+the previous iteration. Its exit code is the control flow.
+
+| Exit | Meaning | Action |
+|---|---|---|
+| 0 | GREEN | Stop, successfully |
+| 1 | PROGRESS — strictly fewer failures | Continue |
+| 2 | NO_PROGRESS — identical failure set | **Stop, escalate** |
+| 3 | REGRESSION — something that passed now fails | **Stop, revert** |
+| 4 | ERROR — the run could not complete | **Stop** |
+
+Two guards matter more than the rest:
+
+- **Zero tests is never green.** Playwright emits a well-formed report with
+  zero suites when the harness itself fails — a webServer port already in use,
+  a bad `--project` name. Read naively that is indistinguishable from
+  "everything passed", and a loop that exits reporting success having verified
+  nothing is the worst possible outcome. Both cases exit 4.
+- **Flaky is not passing.** A test that passes on retry is non-deterministic;
+  the script reports it separately rather than counting it as green.
+
+Spinning is prevented structurally: the loop stops on exit 2 rather than
+trusting the agent to notice it is repeating itself. Escaping is prevented by
+delegation — fixes go to `bug-fixer`, which has no write access to `tests/`.
+
+Hard ceiling of 5 iterations regardless of progress. A loop without a ceiling
+is not a loop, it is a runaway.
+
+All five paths were exercised against the real suite by removing a validation
+guard from `backend/routes/mealPlan.js`: baseline → 1, re-run unchanged → 2,
+guard restored → 0, port 4000 occupied → 4.
+
 ## Branch protection
 
 The workflows only bite once GitHub is configured to require them. In
