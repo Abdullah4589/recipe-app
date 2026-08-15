@@ -7,6 +7,13 @@ export default function DietChip({ label, selected, onPress }) {
   const colors    = useColors();
   return (
     <TouchableOpacity
+      // See CuisineChip — selection must be readable by assistive tech and by
+      // tests, not only visible as a colour change, and on web it has to be in
+      // the label because aria-selected is dropped on role="button".
+      testID={`diet-chip-${label}`}
+      accessibilityRole="button"
+      accessibilityState={{ selected: !!selected }}
+      accessibilityLabel={`${label} diet${selected ? ', selected' : ''}`}
       onPress={onPress}
       style={[
         styles.chip,

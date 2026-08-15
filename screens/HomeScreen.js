@@ -75,7 +75,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+    <View testID="home-screen" style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -99,6 +99,9 @@ export default function HomeScreen({ navigation }) {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                testID="nav-favourites"
+                accessibilityRole="button"
+                accessibilityLabel="Favourites"
                 onPress={() => navigation.navigate('Favourites')}
                 style={styles.headerBtn}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
@@ -106,6 +109,9 @@ export default function HomeScreen({ navigation }) {
                 <Text style={[styles.headerBtnIcon, { color: theme.primary }]}>♥</Text>
               </TouchableOpacity>
               <TouchableOpacity
+                testID="nav-custom-recipes"
+                accessibilityRole="button"
+                accessibilityLabel="My recipes"
                 onPress={() => navigation.navigate('CustomRecipes')}
                 style={styles.headerBtn}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
@@ -113,6 +119,9 @@ export default function HomeScreen({ navigation }) {
                 <Text style={[styles.headerBtnIcon, { color: theme.primary }]}>✎</Text>
               </TouchableOpacity>
               <TouchableOpacity
+                testID="nav-logout"
+                accessibilityRole="button"
+                accessibilityLabel="Sign out"
                 onPress={handleLogout}
                 style={styles.headerBtn}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
@@ -185,6 +194,8 @@ export default function HomeScreen({ navigation }) {
       {/* CTA */}
       <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: insets.bottom + 16 }]}>
         <TouchableOpacity
+          testID="plan-my-week"
+          accessibilityRole="button"
           style={[styles.planBtn, { backgroundColor: theme.primary }]}
           onPress={handlePlanMyWeek}
           activeOpacity={0.85}

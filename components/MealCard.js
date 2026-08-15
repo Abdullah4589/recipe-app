@@ -21,6 +21,9 @@ export default function MealCard({ meal, mealType, onPress, onShuffle }) {
 
   return (
     <TouchableOpacity
+      testID={`meal-card-${mealType}`}
+      accessibilityRole="button"
+      accessibilityLabel={`${mealType}: ${meal.title}`}
       style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
       onPress={onPress}
       activeOpacity={0.85}
@@ -41,7 +44,7 @@ export default function MealCard({ meal, mealType, onPress, onShuffle }) {
       </View>
 
       <View style={styles.body}>
-        <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>{meal.title}</Text>
+        <Text testID={`meal-title-${mealType}`} style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>{meal.title}</Text>
         <View style={styles.metaRow}>
           <MetaChip label={meal.cuisine} bgColor={badge.bg} textColor={badge.text} />
           {dietLabel ? (
@@ -55,6 +58,9 @@ export default function MealCard({ meal, mealType, onPress, onShuffle }) {
 
       <View style={styles.actions}>
         <TouchableOpacity
+          testID={`meal-shuffle-${mealType}`}
+          accessibilityRole="button"
+          accessibilityLabel={`Shuffle ${mealType}`}
           onPress={onShuffle}
           style={[styles.shuffleBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
