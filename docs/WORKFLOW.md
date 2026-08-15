@@ -193,6 +193,31 @@ ever appears that CI did not authorise, check that setting first.
 | Vercel (web) | after backend succeeds | `production` environment |
 | EAS (Android) | **manual only** | human decision |
 
+### ⏸️ Deploys are currently paused
+
+`DEPLOY_ENABLED` is a repository variable acting as a master switch, and it is
+**off**. The Railway trial expired and the backend service was torn down —
+`/api/health` returns Railway's own `404 Application not found`. Deploys were
+therefore failing on billing, not on anything in this repository.
+
+They are paused rather than left failing because **a workflow that is always
+red teaches people to ignore red**, and the next genuine failure would go
+unnoticed. That is the same reasoning as the zero-warning lint gate.
+
+The jobs are **skipped, not passed**. A green tick beside "Deploy" on a commit
+that never deployed would be a false signal, which is precisely what the rest
+of this pipeline exists to prevent. Skipped renders grey and reads honestly as
+"did not run", and the run summary states plainly that the commit is not live.
+
+To resume, once the backend has somewhere to live:
+
+```bash
+gh variable set DEPLOY_ENABLED --body true
+```
+
+Nothing else needs changing — the tokens are already configured and the
+pipeline reached the upload step successfully before Railway refused.
+
 Backend deploys before web because the web bundle inlines the backend URL at
 build time and will call the new API the moment it loads.
 
