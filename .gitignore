@@ -47,6 +47,12 @@ yarn.lock
 # TypeScript
 *.tsbuildinfo
 
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # Certificates & signing keys
 *.jks
 *.p8
@@ -54,7 +60,15 @@ yarn.lock
 *.key
 *.mobileprovision
 *.orig.*
-CLAUDE.md
+
+# Scratch prompt drafts
 meal-planner-prompt_1.md
 meal-planner-prompt_2.md
 meal-planner-prompt.md
+
+# Expo web export (rebuilt by scripts/serve-web.js for e2e)
+dist/
+
+# CLAUDE.md and .claude/ are deliberately committed — the agent rules and
+# guardrails are part of the project, not personal local config.
+.claude/settings.local.json
